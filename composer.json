@@ -1,0 +1,56 @@
+{
+    "name": "devable/shopware6-sitemap-domain-filter",
+    "description": "Symfony bundle that excludes configured domains from the Shopware 6 sitemap generation",
+    "type": "symfony-bundle",
+    "license": "MPL-2.0",
+    "authors": [
+        {
+            "name": "Jan Matthiesen",
+            "homepage": "https://devable.me",
+            "role": "Manufacturer"
+        }
+    ],
+    "keywords": [
+        "shopware",
+        "shopware6",
+        "sitemap",
+        "sitemap.xml",
+        "seo",
+        "domain",
+        "sales-channel",
+        "multi-domain",
+        "symfony",
+        "symfony-bundle"
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "shopware/core": "~6.6.0",
+        "symfony/http-kernel": "^7.0"
+    },
+    "require-dev": {
+        "league/flysystem-memory": "^3.0",
+        "phpunit/phpunit": "^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Devable\\SitemapDomainFilterBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Devable\\SitemapDomainFilterBundle\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false,
+            "symfony/runtime": false
+        }
+    }
+}
