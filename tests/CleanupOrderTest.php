@@ -12,7 +12,6 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Sitemap\Service\SitemapHandleFactory;
 use Shopware\Core\Content\Sitemap\Struct\Url;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -25,38 +24,33 @@ class CleanupOrderTest extends TestCase
 
     public function testExcludedDomainAsFirstHandleCleansUpAndKeepsRealSitemap(): void
     {
-        $this->generate(['https://devable.me' => 'devableId', 'https://netinventors.de' => 'netinventorsId']);
+        $paths = $this->generate(['https://devable.me' => 'devableId', 'https://netinventors.de' => 'netinventorsId']);
+
+        static::assertSame([self::FOLDER . '/sc-netinventorsId-sitemap-netinventors-de-1.xml.gz'], $paths);
     }
 
     public function testExcludedDomainAsLaterHandleIsCleanedUpByCore(): void
     {
-        $this->generate(['https://netinventors.de' => 'netinventorsId', 'https://devable.me' => 'devableId']);
+        $paths = $this->generate(['https://netinventors.de' => 'netinventorsId', 'https://devable.me' => 'devableId']);
+
+        static::assertSame([self::FOLDER . '/sc-netinventorsId-sitemap-netinventors-de-1.xml.gz'], $paths);
     }
 
     /**
-     * Asserts that only a freshly written sitemap of the non-excluded domain is left.
-     *
-     * The file name depends on the Shopware version: early 6.6 releases write "sc-sitemap-{domain}-1.xml.gz",
-     * later ones add the domain id ("sc-{domainId}-sitemap-{domain}-1.xml.gz"). So only the suffix is checked.
-     *
      * @param array<string, string> $domains url => domain id, in handle order
+     *
+     * @return list<string>
      */
-    private function generate(array $domains): void
+    private function generate(array $domains): array
     {
         $filesystem = new Filesystem(new InMemoryFilesystemAdapter());
-        // Leftovers of a previous run in both naming schemes, including the old sitemap of the excluded domain
+        // Leftovers of a previous run, including the old sitemap of the excluded domain
         $filesystem->write(self::FOLDER . '/sc-devableId-sitemap-devable-me-1.xml.gz', 'old');
         $filesystem->write(self::FOLDER . '/sc-netinventorsId-sitemap-netinventors-de-1.xml.gz', 'old');
-        $filesystem->write(self::FOLDER . '/sc-sitemap-devable-me-1.xml.gz', 'old');
-        $filesystem->write(self::FOLDER . '/sc-sitemap-netinventors-de-1.xml.gz', 'old');
 
         $context = $this->createStub(SalesChannelContext::class);
         $context->method('getSalesChannelId')->willReturn('sc');
         $context->method('getLanguageId')->willReturn('lang');
-        // Early 6.6 releases build the folder and file names from the sales channel entity
-        $salesChannel = new SalesChannelEntity();
-        $salesChannel->setId('sc');
-        $context->method('getSalesChannel')->willReturn($salesChannel);
 
         $factory = new DomainFilteringSitemapHandleFactory(new SitemapHandleFactory(new EventDispatcher()), ['devable.me']);
 
@@ -93,8 +87,8 @@ class CleanupOrderTest extends TestCase
             $paths[] = $file->path();
         }
 
-        static::assertCount(1, $paths);
-        static::assertStringEndsWith('-sitemap-netinventors-de-1.xml.gz', $paths[0]);
-        static::assertNotSame('old', $filesystem->read($paths[0]));
+        static::assertNotSame('old', $filesystem->read(self::FOLDER . '/sc-netinventorsId-sitemap-netinventors-de-1.xml.gz'));
+
+        return $paths;
     }
 }

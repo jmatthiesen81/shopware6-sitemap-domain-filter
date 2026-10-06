@@ -39,8 +39,7 @@ readonly class DomainFilteringSitemapHandleFactory implements SitemapHandleFacto
             return new NullSitemapHandle($filesystem, $context);
         }
 
-        // The 6.6 interface declares only three parameters, the core factory reads $domainId via func_num_args().
-        // So always pass all four arguments.
+        // Always pass all four arguments, the core factory reads $domainId via func_num_args()
         return $this->inner->create($filesystem, $context, $domain, $domainId);
     }
 

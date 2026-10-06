@@ -8,8 +8,8 @@ This bundle prevents the sitemap of the excluded domains from being written.
 
 ## Requirements
 
-- PHP 8.2+
-- Shopware 6.6 (`shopware/core ~6.6.0`)
+- PHP 8.3+
+- Shopware 6.7 (`shopware/core ~6.7.0`)
 
 ## Installation
 
