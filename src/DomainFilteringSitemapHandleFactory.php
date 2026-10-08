@@ -14,19 +14,10 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
  */
 readonly class DomainFilteringSitemapHandleFactory implements SitemapHandleFactoryInterface
 {
-    /**
-     * @var array<string, true>
-     */
-    private array $excludedHosts;
-
-    /**
-     * @param list<string> $excludedHosts lowercased hosts, e.g. "devable.me"
-     */
     public function __construct(
         private SitemapHandleFactoryInterface $inner,
-        array $excludedHosts,
+        private ExcludedHosts $excludedHosts,
     ) {
-        $this->excludedHosts = \array_fill_keys(\array_map(\strtolower(...), $excludedHosts), true);
     }
 
     public function create(
@@ -35,26 +26,11 @@ readonly class DomainFilteringSitemapHandleFactory implements SitemapHandleFacto
         string|null $domain = null,
         string|null $domainId = null,
     ): SitemapHandleInterface {
-        if ($this->isExcluded($domain)) {
+        if ($this->excludedHosts->containsUrl($domain)) {
             return new NullSitemapHandle($filesystem, $context);
         }
 
         // Always pass all four arguments, the core factory reads $domainId via func_num_args()
         return $this->inner->create($filesystem, $context, $domain, $domainId);
-    }
-
-    private function isExcluded(string|null $domain): bool
-    {
-        if (null === $domain) {
-            return false;
-        }
-
-        $host = \parse_url($domain, \PHP_URL_HOST);
-
-        if (!\is_string($host) || '' === $host) {
-            return false;
-        }
-
-        return isset($this->excludedHosts[\strtolower($host)]);
     }
 }

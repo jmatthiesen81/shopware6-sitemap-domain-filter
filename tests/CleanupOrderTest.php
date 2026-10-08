@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Devable\SitemapDomainFilterBundle\Tests;
 
 use Devable\SitemapDomainFilterBundle\DomainFilteringSitemapHandleFactory;
+use Devable\SitemapDomainFilterBundle\ExcludedHosts;
 use Devable\SitemapDomainFilterBundle\NullSitemapHandle;
 use League\Flysystem\Filesystem;
 use League\Flysystem\InMemory\InMemoryFilesystemAdapter;
@@ -52,7 +53,7 @@ class CleanupOrderTest extends TestCase
         $context->method('getSalesChannelId')->willReturn('sc');
         $context->method('getLanguageId')->willReturn('lang');
 
-        $factory = new DomainFilteringSitemapHandleFactory(new SitemapHandleFactory(new EventDispatcher()), ['devable.me']);
+        $factory = new DomainFilteringSitemapHandleFactory(new SitemapHandleFactory(new EventDispatcher()), new ExcludedHosts(['devable.me']));
 
         $handles = [];
         foreach ($domains as $url => $domainId) {
