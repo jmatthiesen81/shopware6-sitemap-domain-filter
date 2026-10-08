@@ -28,7 +28,7 @@ class SitemapDomainFilterBundle extends AbstractBundle
         $rootNode
             ->children()
                 ->arrayNode('excluded_domains')
-                    ->info('Hosts whose sitemap is not generated, e.g. "devable.me". Matched exactly, "www." variants need their own entry.')
+                    ->info('Hosts whose sitemap is neither generated nor delivered, e.g. "devable.me". Matched exactly, "www." variants need their own entry.')
                     ->defaultValue([])
                     ->scalarPrototype()
                         ->beforeNormalization()
@@ -57,13 +57,26 @@ class SitemapDomainFilterBundle extends AbstractBundle
             return;
         }
 
-        $configurator->services()
+        $services = $configurator->services();
+
+        $services
+            ->set(ExcludedHosts::class)
+            ->args([ $excludedHosts ])
+        ;
+
+        $services
             ->set(DomainFilteringSitemapHandleFactory::class)
             ->decorate(SitemapHandleFactoryInterface::class)
             ->args([
                 service('.inner'),
-                $excludedHosts,
+                service(ExcludedHosts::class),
             ])
+        ;
+
+        $services
+            ->set(SitemapRequestSubscriber::class)
+            ->args([ service(ExcludedHosts::class) ])
+            ->tag('kernel.event_subscriber')
         ;
     }
 

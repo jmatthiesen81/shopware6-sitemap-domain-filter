@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Devable\SitemapDomainFilterBundle\Tests;
 
 use Devable\SitemapDomainFilterBundle\DomainFilteringSitemapHandleFactory;
+use Devable\SitemapDomainFilterBundle\ExcludedHosts;
 use Devable\SitemapDomainFilterBundle\NullSitemapHandle;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -33,7 +34,7 @@ class DomainFilteringSitemapHandleFactoryTest extends TestCase
         $inner = $this->createMock(SitemapHandleFactoryInterface::class);
         $inner->expects($this->never())->method('create');
 
-        $factory = new DomainFilteringSitemapHandleFactory($inner, [ 'devable.me' ]);
+        $factory = new DomainFilteringSitemapHandleFactory($inner, new ExcludedHosts([ 'devable.me' ]));
 
         $handle = $factory->create(
             $this->createStub(FilesystemOperator::class),
@@ -71,7 +72,7 @@ class DomainFilteringSitemapHandleFactoryTest extends TestCase
             ->willReturn($expectedHandle)
         ;
 
-        $factory = new DomainFilteringSitemapHandleFactory($inner, [ 'devable.me' ]);
+        $factory = new DomainFilteringSitemapHandleFactory($inner, new ExcludedHosts([ 'devable.me' ]));
 
         static::assertSame($expectedHandle, $factory->create($filesystem, $context, $domain, 'domain-id'));
     }
@@ -81,7 +82,7 @@ class DomainFilteringSitemapHandleFactoryTest extends TestCase
         $inner = $this->createMock(SitemapHandleFactoryInterface::class);
         $inner->expects($this->never())->method('create');
 
-        $factory = new DomainFilteringSitemapHandleFactory($inner, [ 'Devable.me' ]);
+        $factory = new DomainFilteringSitemapHandleFactory($inner, new ExcludedHosts([ 'Devable.me' ]));
 
         $handle = $factory->create(
             $this->createStub(FilesystemOperator::class),

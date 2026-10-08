@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Devable\SitemapDomainFilterBundle\Tests;
 
 use Devable\SitemapDomainFilterBundle\DomainFilteringSitemapHandleFactory;
+use Devable\SitemapDomainFilterBundle\ExcludedHosts;
 use Devable\SitemapDomainFilterBundle\SitemapDomainFilterBundle;
+use Devable\SitemapDomainFilterBundle\SitemapRequestSubscriber;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Sitemap\Service\SitemapHandleFactoryInterface;
@@ -26,6 +28,7 @@ class SitemapDomainFilterBundleTest extends TestCase
         $builder = $this->load([]);
 
         static::assertFalse($builder->hasDefinition(DomainFilteringSitemapHandleFactory::class));
+        static::assertFalse($builder->hasDefinition(SitemapRequestSubscriber::class));
     }
 
     public function testDecoratorIsRegisteredWithNormalizedHosts(): void
@@ -35,7 +38,14 @@ class SitemapDomainFilterBundleTest extends TestCase
         $definition = $builder->getDefinition(DomainFilteringSitemapHandleFactory::class);
 
         static::assertSame(SitemapHandleFactoryInterface::class, $definition->getDecoratedService()[0] ?? null);
-        static::assertSame([ 'devable.me', 'www.devable.me' ], $definition->getArgument(1));
+        static::assertSame([ 'devable.me', 'www.devable.me' ], $builder->getDefinition(ExcludedHosts::class)->getArgument(0));
+    }
+
+    public function testSubscriberIsRegistered(): void
+    {
+        $builder = $this->load([ 'excluded_domains' => [ 'devable.me' ] ]);
+
+        static::assertTrue($builder->getDefinition(SitemapRequestSubscriber::class)->hasTag('kernel.event_subscriber'));
     }
 
     public function testDecoratorReplacesCoreFactoryAfterCompile(): void

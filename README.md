@@ -1,10 +1,11 @@
 # Shopware 6 Sitemap Domain Filter Bundle
 
-Symfony bundle (not a Shopware plugin) that skips the sitemap generation for configured domains.
+Symfony bundle (not a Shopware plugin) that skips the sitemap generation and delivery for configured domains.
 
 Shopware creates one sitemap per domain of a sales channel and language, and lists all of them in the same
 `sitemap.xml` index. If two domains share a sales channel **and** a language, both sitemaps show up in that index.
-This bundle prevents the sitemap of the excluded domains from being written.
+This bundle prevents the sitemap of the excluded domains from being written and answers their `sitemap.xml` with a
+404.
 
 ## Requirements
 
@@ -37,10 +38,11 @@ devable_sitemap_domain_filter:
 - A host excludes all of its paths (`devable.me/en` too) and ignores the port.
 - With an empty list the bundle registers nothing.
 
-Regenerate the sitemap afterwards:
+Regenerate the sitemap and clear the HTTP cache afterwards, since `sitemap.xml` may be cached:
 
 ```bash
 bin/console sitemap:generate --force
+bin/console cache:clear
 ```
 
 ## How it works
@@ -51,11 +53,25 @@ returns a `NullSitemapHandle` that writes nothing, so no file exists that `Sitem
 Shopware cleans up old sitemap files only through the first handle. If the excluded domain is first, the
 `NullSitemapHandle` does that cleanup itself, so old files of the excluded domain are removed as well.
 
+### Delivery
+
+The core lists sitemaps per sales channel and language, not per domain. Without further measures,
+`devable.me/sitemap.xml` would still serve an index that lists the sitemap files of the other domain. Therefore:
+
+- `SitemapRequestSubscriber` answers the Storefront routes `frontend.sitemap.xml` and `frontend.sitemap.proxy`
+  (Shopware 6.6.7+) with an empty 404 if the request host is excluded. It runs on `kernel.request` before the sales
+  channel context is resolved, so the 404 is not stored in the HTTP cache.
+
+Shopware 6.6 does not generate a `robots.txt`. If a static `public/robots.txt` lists the sitemap of an excluded
+domain, remove that `Sitemap:` line there.
+
+The Store API route `/store-api/sitemap` is not affected, because it identifies the sales channel by access key, not
+by domain. Headless frontends have to handle excluded domains themselves.
+
 ## SEO note
 
-`devable.me/sitemap.xml` uses the same sales channel and language, so it still serves an index that lists only the
-sitemap files of the other domain. If the excluded domain does not have to stay an active storefront, removing it
-from the sales channel and redirecting it (301) is the cleaner solution.
+The excluded domain stays an active, crawlable storefront with the same content as the other domain. If it does not
+have to stay one, removing it from the sales channel and redirecting it (301) is the cleaner solution.
 
 ## Maintenance
 
@@ -64,6 +80,8 @@ The bundle relies on internal behavior of `SitemapExporter` and `SitemapHandle`.
 - `SitemapExporter::initSitemapHandles()` / `finishSitemapHandles()` (cleanup still only via the first handle?)
 - `SitemapHandle::getPath()` / `cleanUp()` (folder scheme `sitemap/salesChannel-{sc}-{lang}/`)
 - `SitemapHandleFactoryInterface::create()` signature and its service ID
+- Route names in `Shopware\Storefront\Controller\SitemapController` (`frontend.sitemap.xml`,
+  `frontend.sitemap.proxy` since 6.6.7)
 
 ## Tests
 
